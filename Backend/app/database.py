@@ -1,0 +1,37 @@
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from app.config import settings
+
+# Create SQLAlchemy engine
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    echo=settings.debug
+)
+
+# Create SessionLocal class
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create Base class for models
+Base = declarative_base()
+
+
+# Dependency to get database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Function to create all tables
+def create_tables():
+    """Create all database tables if they don't exist."""
+    # Import all models to ensure they're registered with Base.metadata
+    from app.models import User, Conversation, Message
+    
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
